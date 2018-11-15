@@ -1,5 +1,5 @@
-#ifndef ivutils_Handler_h
-#define ivutils_Handler_h
+#ifndef ivutils_Messenger_h
+#define ivutils_Messenger_h
 
 #include "ivutils/Message.h"
 
@@ -9,10 +9,12 @@
 
 namespace ivutils
 {
-  class Handler
+  /// Basic communication protocol handler
+  class Messenger
   {
     public:
-      Handler( const char* config_file );
+      /// Build a messenger at a given hardware address
+      Messenger( unsigned short addr = 0 );
 
       /// Send a message to the module
       /// \param[in] msg Command to be transmitted
@@ -25,11 +27,15 @@ namespace ivutils
       template<typename T> T get( const message_t& msg ) const;
 
     private:
-      std::string fetch() const;
+      struct ReturnValue
+      {
+        std::string message;
+        std::string timestamp;
+      };
+      ReturnValue fetch() const;
       static const std::regex RGX_STR_ANSW, RGX_INT_ANSW, RGX_FLT_ANSW;
       mutable std::string last_command_;
   };
 }
 
 #endif
-
