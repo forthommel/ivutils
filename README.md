@@ -10,5 +10,5 @@ Currently designed for:
 Dependencies:
 
 - [NI-488.2](http://www.ni.com/download/ni-488.2---linux/6902/en/) GPIB driver
-
+- CMake
 

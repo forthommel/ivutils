@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(ivutils CXX)
+set(CMAKE_CXX_STANDARD 11)
 set(PROJECT_VERSION 1)
 set(IVUTILS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR})
