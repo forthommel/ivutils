@@ -3,6 +3,7 @@
 
 #include "ivutils/Message.h"
 
+#include <vector>
 #include <string>
 #include <regex>
 
@@ -13,8 +14,15 @@ namespace ivutils
     public:
       Handler( const char* config_file );
 
-      void send( const message_t& ) const;
-      template<typename T> T get( const message_t& ) const;
+      /// Send a message to the module
+      /// \param[in] msg Command to be transmitted
+      void send( const message_t& msg ) const;
+      /// Send a list of messages to the module
+      /// \param[in] msg_batch List of commands to be transmitted
+      void send( const std::vector<message_t>& msg_batch ) const;
+      /// Retrieve data from the module
+      /// \param[in] msg Command to be transmitted
+      template<typename T> T get( const message_t& msg ) const;
 
     private:
       std::string fetch() const;

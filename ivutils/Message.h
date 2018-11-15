@@ -3,6 +3,7 @@
 
 namespace ivutils
 {
+  /// Common type for all command/messages
   typedef const char* message_t;
   /// A useful collection of pre-recorded messages
   namespace msg

@@ -1,6 +1,5 @@
 #include "ivutils/Handler.h"
 
-#include <vector>
 #include <exception>
 
 using namespace ivutils;
@@ -17,6 +16,12 @@ void
 Handler::send( const message_t& msg ) const
 {
   last_command_ = msg;
+}
+
+#include <vector>
+void
+Handler::send( const std::vector<message_t>& msg_batch ) const
+{
 }
 
 template<> std::string
