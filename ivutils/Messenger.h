@@ -15,9 +15,9 @@ namespace ivutils
   class Messenger
   {
     public:
-      Messenger() = default;
-      /// Build a messenger at a list of parameters
-      explicit Messenger( const ParametersList& params );
+//      Messenger() = default;
+      /// Build a messenger at a given address
+      explicit Messenger( int prim_addr, int second_addr = 0 );
 
       /// Send a message to the module
       /// \param[in] msg Command to be transmitted

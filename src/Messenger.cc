@@ -17,13 +17,10 @@ const std::regex Messenger::RGX_STR_ANSW( "^(\\w+)A$" );
 const std::regex Messenger::RGX_INT_ANSW( "^([0-9]+)A$" );
 const std::regex Messenger::RGX_FLT_ANSW( "^([0-9\\.]+)A$" );
 
-Messenger::Messenger( const ParametersList& params ) :
-  configCommands_   ( params.getParameter<std::vector<std::string> >( "configCommands" ) ),
-  operationCommands_( params.getParameter<std::vector<std::string> >( "operationCommands" ) ),
-  closingCommands_  ( params.getParameter<std::vector<std::string> >( "closingCommands" ) )
+Messenger::Messenger( int prim_addr, int second_addr )
 {
 #if defined GPIB
-  int board_index = 0, prim_addr = 1, second_addr = 0, send_eoi = 1, eos_mode = 0;
+  int board_index = 0, send_eoi = 1, eos_mode = 0;
   device_ = ibdev( board_index, prim_addr, second_addr, TNONE, send_eoi, eos_mode );
   if ( device_ < 0 )
     throw std::runtime_error( "Failed to initialise the device interface!\n\t"+std::string( gpib_error_string( ThreadIberr() ) ) );

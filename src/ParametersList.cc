@@ -127,12 +127,6 @@ ParametersList::getParameter( std::string key ) const
   throw std::runtime_error( "ParametersList: Invalid type for key="+key+"!" );
 }
 
-template<typename T> T&
-ParametersList::operator[]( std::string key )
-{
-  throw std::runtime_error( "ParametersList: Invalid type for key="+key+"!" );
-}
-
 template<typename T> ParametersList&
 ParametersList::set( std::string key, const T& value )
 {
@@ -153,15 +147,6 @@ ParametersList::getParameter<ParametersList>( std::string key ) const
 }
 
 template<> ParametersList&
-ParametersList::operator[]<ParametersList>( std::string key )
-{
-  for ( auto& kv : param_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return param_values_[key];
-}
-
-template<> ParametersList&
 ParametersList::set<ParametersList>( std::string key, const ParametersList& value )
 {
   param_values_[key] = value;
@@ -175,15 +160,6 @@ ParametersList::getParameter<std::vector<ParametersList> >( std::string key ) co
     if ( kv.first.compare( key ) == 0 )
       return kv.second;
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
-}
-
-template<> std::vector<ParametersList>&
-ParametersList::operator[]<std::vector<ParametersList> >( std::string key )
-{
-  for ( auto& kv : vec_param_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return vec_param_values_[key];
 }
 
 template<> ParametersList&
@@ -206,15 +182,6 @@ ParametersList::getParameter<int>( std::string key ) const
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
 }
 
-template<> int&
-ParametersList::operator[]<int>( std::string key )
-{
-  for ( auto& kv : int_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return int_values_[key];
-}
-
 template<> ParametersList&
 ParametersList::set<int>( std::string key, const int& value )
 {
@@ -229,15 +196,6 @@ ParametersList::getParameter<std::vector<int> >( std::string key ) const
     if ( kv.first.compare( key ) == 0 )
       return kv.second;
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
-}
-
-template<> std::vector<int>&
-ParametersList::operator[]<std::vector<int> >( std::string key )
-{
-  for ( auto& kv : vec_int_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return vec_int_values_[key];
 }
 
 template<> ParametersList&
@@ -260,15 +218,6 @@ ParametersList::getParameter<double>( std::string key ) const
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
 }
 
-template<> double&
-ParametersList::operator[]<double>( std::string key )
-{
-  for ( auto& kv : dbl_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return dbl_values_[key];
-}
-
 template<> ParametersList&
 ParametersList::set<double>( std::string key, const double& value )
 {
@@ -283,15 +232,6 @@ ParametersList::getParameter<std::vector<double> >( std::string key ) const
     if ( kv.first.compare( key ) == 0 )
       return kv.second;
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
-}
-
-template<> std::vector<double>&
-ParametersList::operator[]<std::vector<double> >( std::string key )
-{
-  for ( auto& kv : vec_dbl_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return vec_dbl_values_[key];
 }
 
 template<> ParametersList&
@@ -314,15 +254,6 @@ ParametersList::getParameter<std::string>( std::string key ) const
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
 }
 
-template<> std::string&
-ParametersList::operator[]<std::string>( std::string key )
-{
-  for ( auto& kv : str_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return str_values_[key];
-}
-
 template<> ParametersList&
 ParametersList::set<std::string>( std::string key, const std::string& value )
 {
@@ -337,15 +268,6 @@ ParametersList::getParameter<std::vector<std::string> >( std::string key ) const
     if ( kv.first.compare( key ) == 0 )
       return kv.second;
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
-}
-
-template<> std::vector<std::string>&
-ParametersList::operator[]<std::vector<std::string> >( std::string key )
-{
-  for ( auto& kv : vec_str_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return vec_str_values_[key];
 }
 
 template<> ParametersList&

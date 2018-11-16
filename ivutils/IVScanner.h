@@ -2,7 +2,7 @@
 #define ivutils_IVScanner_h
 
 #include "ivutils/PythonParser.h"
-#include "ivutils/Messenger.h"
+#include "ivutils/Device.h"
 
 namespace ivutils
 {
@@ -19,9 +19,9 @@ namespace ivutils
 
       PythonParser parser_;
       /// SourceMeter communication module
-      Messenger srcmeter_;
+      Device srcmeter_;
       /// Ammeter communication module
-      Messenger ammeter_;
+      Device ammeter_;
 
       bool ramp_down_;
       double v_test_; ///< Voltage to test stability (abs value)
