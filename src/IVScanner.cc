@@ -1,15 +1,17 @@
 #include "ivutils/IVScanner.h"
+#include <iostream>
 
 using namespace ivutils;
 
 IVScanner::IVScanner( const char* config_file ) :
-  parser_( config_file )
-  /*bool ramp_down_;
-  double v_test_; ///< Voltage to test stability (abs value)
-  size_t num_repetitions_; ///< current values per voltage
-  unsigned int stable_time_; ///< time for stabilizing after changing voltage (in seconds)
-  unsigned int time_at_test_; ///< timein stability test at voltage V_test (in seconds)*/
-{}
+  parser_( config_file ),
+  ramp_down_      ( parser_.getParameter<bool>( "rampDown" ) ),
+  num_repetitions_( parser_.getParameter<int>( "numRepetitions" ) ),
+  stable_time_    ( parser_.getParameter<int>( "stableTime" ) ),
+  time_at_test_   ( parser_.getParameter<int>( "timeAtTest" ) )
+{
+  //std::cout << "---> " << parser_.getParameter<ParametersList>( "ammeter" );
+}
 
 void
 IVScanner::rampDown()

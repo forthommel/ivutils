@@ -1,9 +1,9 @@
 #include "ivutils/PythonParser.h"
 #include <frameobject.h> // Python
 
+#include <sstream>
 #include <stdexcept>
 #include <algorithm>
-#include <sstream>
 
 #if PY_MAJOR_VERSION < 3
 # define PYTHON2
@@ -31,32 +31,42 @@ PythonParser::PythonParser( const char* config_file )
     delete [] sfilename;
   if ( !Py_IsInitialized() )
     throw std::runtime_error( "PythonParser: Failed to initialise the Python cards parser!" );
-  cfg_ = PyImport_ImportModule( filename.c_str() ); // new
-  if ( !cfg_ )
+  PyObject* cfg = PyImport_ImportModule( filename.c_str() ); // new
+  if ( !cfg )
     throwPythonError( "Failed to parse the configuration card \""+filename+"\" at "+std::string( config_file ) );
+
+  PyObject* config = PyObject_GetAttrString( cfg, "config" ); // new
+  if ( !config )
+    throwPythonError( "Failed to extract a \"config\" keyword from the configuration card!" );
+  ParametersList::operator+=( get<ParametersList>( config ) );
+
+  //--- finalisation
+  Py_CLEAR( config );
+  Py_CLEAR( cfg );
 }
 
 PythonParser::~PythonParser()
 {
-  //--- finalisation
-  Py_CLEAR( cfg_ );
   if ( Py_IsInitialized() )
     Py_Finalize();
 }
 
-template<> int
-PythonParser::get<int>( const char* key ) const
+template<> bool
+PythonParser::is<int>( PyObject* obj ) const
 {
-  PyObject* obj = extract( cfg_, key );
+#ifdef PYTHON2
+  return PyInt_Check( obj );
+#else
+  return PyLong_Check( obj );
+#endif
+}
+
+template<> int
+PythonParser::get<int>( PyObject* obj ) const
+{
   if ( !obj )
     throwPythonError( "Failed to retrieve integer object!" );
-  if ( !
-#ifdef PYTHON2
-    PyInt_Check( obj )
-#else
-    PyLong_Check( obj )
-#endif
-  )
+  if ( !is<int>( obj ) )
     throwPythonError( "PythonParser:get: Object has invalid type: integer != \""+std::string( obj->ob_type->tp_name )+"\"." );
 #ifdef PYTHON2
   return PyInt_AsLong( obj );
@@ -66,40 +76,53 @@ PythonParser::get<int>( const char* key ) const
 }
 
 template<> bool
-PythonParser::get<bool>( const char* key ) const
+PythonParser::is<bool>( PyObject* obj ) const
 {
-  PyObject* obj = extract( cfg_, key );
+  return PyBool_Check( obj );
+}
+
+template<> bool
+PythonParser::get<bool>( PyObject* obj ) const
+{
   if ( !obj )
     throwPythonError( "Failed to retrieve boolean object!" );
-  if ( !PyBool_Check( obj ) )
+  if ( !is<bool>( obj ) )
     throwPythonError( "PythonParser:get: Object has invalid type: bool != \""+std::string( obj->ob_type->tp_name )+"\"." );
-  return (bool)get<int>( key );
+  return (bool)get<int>( obj );
+}
+
+template<> bool
+PythonParser::is<double>( PyObject* obj ) const
+{
+  return PyFloat_Check( obj );
 }
 
 template<> double
-PythonParser::get<double>( const char* key ) const
+PythonParser::get<double>( PyObject* obj ) const
 {
-  PyObject* obj = extract( cfg_, key );
   if ( !obj )
     throwPythonError( "Failed to retrieve float object!" );
-  if ( !PyFloat_Check( obj ) )
+  if ( !is<double>( obj ) )
     throwPythonError( "PythonParser:get: Object has invalid type: double != \""+std::string( obj->ob_type->tp_name )+"\"." );
   return PyFloat_AsDouble( obj );
 }
 
-template<> std::string
-PythonParser::get<std::string>( const char* key ) const
+template<> bool
+PythonParser::is<std::string>( PyObject* obj ) const
 {
-  PyObject* obj = extract( cfg_, key );
+#ifdef PYTHON2
+  return PyString_Check( obj );
+#else
+  return PyUnicode_Check( obj );
+#endif
+}
+
+template<> std::string
+PythonParser::get<std::string>( PyObject* obj ) const
+{
   if ( !obj )
     throwPythonError( "Failed to retrieve string object!" );
-  if ( !
-#ifdef PYTHON2
-    PyString_Check( obj )
-#else
-    PyUnicode_Check( obj )
-#endif
-  )
+  if ( !is<std::string>( obj ) )
     throwPythonError( "PythonParser:get: Object has invalid type: string != \""+std::string( obj->ob_type->tp_name )+"\"." );
 #ifdef PYTHON2
   const std::string out = PyString_AsString( obj ); // deprecated in python v3+
@@ -113,14 +136,26 @@ PythonParser::get<std::string>( const char* key ) const
   return out;
 }
 
-template<typename T> std::vector<T>
-PythonParser::getVector( const char* key ) const
+template<typename T> bool
+PythonParser::isVector( PyObject* obj ) const
 {
-  PyObject* obj = extract( cfg_, key );
+  if ( !obj )
+    return false;
+  if ( !PyTuple_Check( obj ) && !PyList_Check( obj ) )
+    return false;
+  PyObject* pfirst = PyTuple_Check( obj ) ? PyTuple_GetItem( obj, 0 ) : PyList_GetItem( obj, 0 );
+  if ( !is<T>( pfirst ) )
+    return false;
+  return true;
+}
+
+template<typename T> std::vector<T>
+PythonParser::getVector( PyObject* obj ) const
+{
   if ( !obj )
     throwPythonError( "Failed to retrieve list/tuple object!" );
   //--- check that it is indeed a vector
-  if ( !PyTuple_Check( obj ) && !PyList_Check( obj ) )
+  if ( !isVector<T>( obj ) )
     throwPythonError( "PythonParser:get: Object has invalid type: list/tuple != \""+std::string( obj->ob_type->tp_name )+"\"." );
   std::vector<T> vec;
   const bool tuple = PyTuple_Check( obj );
@@ -131,6 +166,54 @@ PythonParser::getVector( const char* key ) const
     vec.emplace_back( get<T>( pit ) );
   }
   return vec;
+}
+
+template<> bool
+PythonParser::is<ParametersList>( PyObject* obj ) const
+{
+  if ( !obj )
+    throwPythonError( "Failed to retrieve parameters list object!" );
+  return PyDict_Check( obj );
+}
+
+template<> ParametersList
+PythonParser::get<ParametersList>( PyObject* obj ) const
+{
+  if ( !obj )
+    throwPythonError( "Failed to retrieve parameters list object!" );
+  if ( !is<ParametersList>( obj ) )
+    throwPythonError( "PythonParser:get: Object has invalid type: parameters list != \""+std::string( obj->ob_type->tp_name )+"\"." );
+  ParametersList out;
+  PyObject* pkey = nullptr, *pvalue = nullptr;
+  Py_ssize_t pos = 0;
+  while ( PyDict_Next( obj, &pos, &pkey, &pvalue ) ) {
+    const std::string skey = is<std::string>( pkey )
+      ? get<std::string>( pkey )
+      : is<int>( pkey )
+        ? std::to_string( get<int>( pkey ) ) // integer-type key
+        : "invalid";
+    if ( is<int>( pvalue ) )
+      out.set<int>( skey, get<int>( pvalue ) );
+    else if ( is<double>( pvalue ) )
+      out.set<double>( skey, get<double>( pvalue ) );
+    else if ( is<std::string>( pvalue ) )
+      out.set<std::string>( skey, get<std::string>( pvalue ) );
+    else if ( is<ParametersList>( pvalue ) )
+      out.set<ParametersList>( skey, get<ParametersList>( pvalue ) );
+    else if ( PyTuple_Check( pvalue ) || PyList_Check( pvalue ) ) { // vector
+      if ( isVector<int>( pvalue ) )
+        out.set<std::vector<int> >( skey, getVector<int>( pvalue ) );
+      else if ( isVector<double>( pvalue ) )
+        out.set<std::vector<double> >( skey, getVector<double>( pvalue ) );
+      else if ( isVector<std::string>( pvalue ) )
+        out.set<std::vector<std::string> >( skey, getVector<std::string>( pvalue ) );
+      else if ( isVector<ParametersList>( pvalue ) )
+        out.set<std::vector<ParametersList> >( skey, getVector<ParametersList>( pvalue ) );
+    }
+    else
+      throwPythonError( "Invalid object retrieved as parameters list value!" );
+  }
+  return out;
 }
 
 std::string
@@ -204,356 +287,4 @@ PythonParser::extract( PyObject* obj, const char* key )
   pout = PyDict_GetItem( obj, nink ); // borrowed
   Py_CLEAR( nink );
   return pout;
-}
-
-ParametersList&
-ParametersList::operator+=( const ParametersList& oth )
-{
-  param_values_.insert( oth.param_values_.begin(), oth.param_values_.end() );
-  int_values_.insert( oth.int_values_.begin(), oth.int_values_.end() );
-  dbl_values_.insert( oth.dbl_values_.begin(), oth.dbl_values_.end() );
-  str_values_.insert( oth.str_values_.begin(), oth.str_values_.end() );
-  vec_param_values_.insert( oth.vec_param_values_.begin(), oth.vec_param_values_.end() );
-  vec_int_values_.insert( oth.vec_int_values_.begin(), oth.vec_int_values_.end() );
-  vec_dbl_values_.insert( oth.vec_dbl_values_.begin(), oth.vec_dbl_values_.end() );
-  vec_str_values_.insert( oth.vec_str_values_.begin(), oth.vec_str_values_.end() );
-  return *this;
-}
-
-namespace ivutils
-{
-  std::ostream&
-  operator<<( std::ostream& os, const ParametersList& params )
-  {
-    for ( const auto& kv : params.int_values_ )   os << "\n" << kv.first << ": int(" << kv.second << ")";
-    for ( const auto& kv : params.dbl_values_ )   os << "\n" << kv.first << ": double(" << kv.second << ")";
-    for ( const auto& kv : params.str_values_ )   os << "\n" << kv.first << ": string(" << kv.second << ")";
-    for ( const auto& kv : params.param_values_ ) os << "\n" << kv.first << ": param({" << kv.second << "})";
-    for ( const auto& kv : params.vec_int_values_ ) {
-      os << "\n" << kv.first << ": vint(";
-      bool first = true;
-      for ( const auto& v : kv.second ) {
-        os << ( first ? "" : ", " ) << v;
-        first = false;
-      }
-      os << ")";
-    }
-    for ( const auto& kv : params.vec_dbl_values_ ) {
-      os << "\n" << kv.first << ": vdouble(";
-      bool first = true;
-      for ( const auto& v : kv.second ) {
-        os << ( first ? "" : ", " ) << v;
-        first = false;
-      }
-      os << ")";
-    }
-    for ( const auto& kv : params.vec_str_values_ ) {
-      os << "\n" << kv.first << ": vstring(";
-      bool first = true;
-      for ( const auto& v : kv.second ) {
-        os << ( first ? "" : ", " ) << v;
-        first = false;
-      }
-      os << ")";
-    }
-    return os;
-  }
-}
-
-std::vector<std::string>
-ParametersList::keys() const
-{
-  std::vector<std::string> out;
-  for ( const auto& p : param_values_ )     out.emplace_back( p.first );
-  for ( const auto& p : int_values_ )       out.emplace_back( p.first );
-  for ( const auto& p : dbl_values_ )       out.emplace_back( p.first );
-  for ( const auto& p : str_values_ )       out.emplace_back( p.first );
-  for ( const auto& p : vec_param_values_ ) out.emplace_back( p.first );
-  for ( const auto& p : vec_int_values_ )   out.emplace_back( p.first );
-  for ( const auto& p : vec_dbl_values_ )   out.emplace_back( p.first );
-  for ( const auto& p : vec_str_values_ )   out.emplace_back( p.first );
-  return out;
-}
-
-std::string
-ParametersList::getString( const std::string& key ) const
-{
-  std::ostringstream os;
-  if ( has<ParametersList>( key ) )   os << "params{" << get<ParametersList>( key ) << "}";
-  else if ( has<int>( key ) )         os << get<int>( key );
-  else if ( has<double>( key ) )      os << get<double>( key );
-  else if ( has<std::string>( key ) ) os << get<std::string>( key );
-  else if ( has<std::vector<ParametersList> >( key ) ) {
-    bool first = true;
-    for ( const auto& p : get<std::vector<ParametersList> >( key ) ) {
-      os << ( first ? "" : ", " ) << p;
-      first = false;
-    }
-  }
-  else if ( has<std::vector<int> >( key ) ) {
-    bool first = true;
-    for ( const auto& p : get<std::vector<int> >( key ) ) {
-      os << ( first ? "" : ", " ) << p;
-      first = false;
-    }
-  }
-  else if ( has<std::vector<double> >( key ) ) {
-    bool first = true;
-    for ( const auto& p : get<std::vector<double> >( key ) ) {
-      os << ( first ? "" : ", " ) << p;
-      first = false;
-    }
-  }
-  else if ( has<std::vector<std::string> >( key ) ) {
-    bool first = true;
-    for ( const auto& p : get<std::vector<std::string> >( key ) ) {
-      os << ( first ? "" : ", " ) << p;
-      first = false;
-    }
-  }
-  return os.str();
-}
-
-//------------------------------------------------------------------
-// default template (placeholders)
-//------------------------------------------------------------------
-
-template<typename T> bool
-ParametersList::has( std::string key ) const
-{
-  throw std::runtime_error( "ParametersList: Invalid type for key="+key+"!" );
-}
-
-template<typename T> T
-ParametersList::get( std::string key, const T& def ) const
-{
-  throw std::runtime_error( "ParametersList: Invalid type for key="+key+"!" );
-}
-
-template<typename T> T&
-ParametersList::operator[]( std::string key )
-{
-  throw std::runtime_error( "ParametersList: Invalid type for key="+key+"!" );
-}
-
-template<typename T> ParametersList&
-ParametersList::set( std::string key, const T& value )
-{
-  throw std::runtime_error( "ParametersList: Invalid type for key="+key+"!" );
-}
-
-//------------------------------------------------------------------
-// sub-parameters-type attributes
-//------------------------------------------------------------------
-
-template<> ParametersList
-ParametersList::get<ParametersList>( std::string key, const ParametersList& def ) const
-{
-  for ( const auto& kv : param_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return def;
-}
-
-template<> ParametersList&
-ParametersList::operator[]<ParametersList>( std::string key )
-{
-  for ( auto& kv : param_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return param_values_[key];
-}
-
-template<> ParametersList&
-ParametersList::set<ParametersList>( std::string key, const ParametersList& value )
-{
-  param_values_[key] = value;
-  return *this;
-}
-
-template<> std::vector<ParametersList>
-ParametersList::get<std::vector<ParametersList> >( std::string key, const std::vector<ParametersList>& def ) const
-{
-  for ( const auto& kv : vec_param_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return def;
-}
-
-template<> std::vector<ParametersList>&
-ParametersList::operator[]<std::vector<ParametersList> >( std::string key )
-{
-  for ( auto& kv : vec_param_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return vec_param_values_[key];
-}
-
-template<> ParametersList&
-ParametersList::set<std::vector<ParametersList> >( std::string key, const std::vector<ParametersList>& value )
-{
-  vec_param_values_[key] = value;
-  return *this;
-}
-
-//------------------------------------------------------------------
-// integer-type attributes
-//------------------------------------------------------------------
-
-template<> int
-ParametersList::get<int>( std::string key, const int& def ) const
-{
-  for ( const auto& kv : int_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return def;
-}
-
-template<> int&
-ParametersList::operator[]<int>( std::string key )
-{
-  for ( auto& kv : int_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return int_values_[key];
-}
-
-template<> ParametersList&
-ParametersList::set<int>( std::string key, const int& value )
-{
-  int_values_[key] = value;
-  return *this;
-}
-
-template<> std::vector<int>
-ParametersList::get<std::vector<int> >( std::string key, const std::vector<int>& def ) const
-{
-  for ( const auto& kv : vec_int_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return def;
-}
-
-template<> std::vector<int>&
-ParametersList::operator[]<std::vector<int> >( std::string key )
-{
-  for ( auto& kv : vec_int_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return vec_int_values_[key];
-}
-
-template<> ParametersList&
-ParametersList::set<std::vector<int> >( std::string key, const std::vector<int>& value )
-{
-  vec_int_values_[key] = value;
-  return *this;
-}
-
-//------------------------------------------------------------------
-// floating point-type attributes
-//------------------------------------------------------------------
-
-template<> double
-ParametersList::get<double>( std::string key, const double& def ) const
-{
-  for ( const auto& kv : dbl_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return def;
-}
-
-template<> double&
-ParametersList::operator[]<double>( std::string key )
-{
-  for ( auto& kv : dbl_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return dbl_values_[key];
-}
-
-template<> ParametersList&
-ParametersList::set<double>( std::string key, const double& value )
-{
-  dbl_values_[key] = value;
-  return *this;
-}
-
-template<> std::vector<double>
-ParametersList::get<std::vector<double> >( std::string key, const std::vector<double>& def ) const
-{
-  for ( const auto& kv : vec_dbl_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return def;
-}
-
-template<> std::vector<double>&
-ParametersList::operator[]<std::vector<double> >( std::string key )
-{
-  for ( auto& kv : vec_dbl_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return vec_dbl_values_[key];
-}
-
-template<> ParametersList&
-ParametersList::set<std::vector<double> >( std::string key, const std::vector<double>& value )
-{
-  vec_dbl_values_[key] = value;
-  return *this;
-}
-
-//------------------------------------------------------------------
-// string-type attributes
-//------------------------------------------------------------------
-
-template<> std::string
-ParametersList::get<std::string>( std::string key, const std::string& def ) const
-{
-  for ( const auto& kv : str_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return def;
-}
-
-template<> std::string&
-ParametersList::operator[]<std::string>( std::string key )
-{
-  for ( auto& kv : str_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return str_values_[key];
-}
-
-template<> ParametersList&
-ParametersList::set<std::string>( std::string key, const std::string& value )
-{
-  str_values_[key] = value;
-  return *this;
-}
-
-template<> std::vector<std::string>
-ParametersList::get<std::vector<std::string> >( std::string key, const std::vector<std::string>& def ) const
-{
-  for ( const auto& kv : vec_str_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return def;
-}
-
-template<> std::vector<std::string>&
-ParametersList::operator[]<std::vector<std::string> >( std::string key )
-{
-  for ( auto& kv : vec_str_values_ )
-    if ( kv.first.compare( key ) == 0 )
-      return kv.second;
-  return vec_str_values_[key];
-}
-
-template<> ParametersList&
-ParametersList::set<std::vector<std::string> >( std::string key, const std::vector<std::string>& value )
-{
-  vec_str_values_[key] = value;
-  return *this;
 }
