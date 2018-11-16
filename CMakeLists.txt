@@ -4,10 +4,16 @@ set(PROJECT_VERSION 1)
 set(IVUTILS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR})
 
+#----- find dependencies
+find_package(PythonLibs 2.7 REQUIRED)
+message(STATUS "Python v${PYTHONLIBS_VERSION_STRING} found")
+include_directories(${PYTHON_INCLUDE_DIRS})
+
 #----- define the library
 
 file(GLOB IVUTILS_SOURCES ${IVUTILS_SOURCE_DIR}/*.cc)
 add_library(ivutils SHARED ${IVUTILS_SOURCES})
+target_link_libraries(ivutils ${PYTHON_LIBRARIES})
 
 #----- copy the input cards and other files
 

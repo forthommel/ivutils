@@ -1,6 +1,7 @@
 #ifndef ivutils_IVScanner_h
 #define ivutils_IVScanner_h
 
+#include "ivutils/PythonParser.h"
 #include "ivutils/Messenger.h"
 
 namespace ivutils
@@ -16,6 +17,7 @@ namespace ivutils
     private:
       void configure();
 
+      PythonParser parser_;
       /// SourceMeter communication module
       Messenger srcmeter_;
       /// Ammeter communication module
