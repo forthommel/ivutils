@@ -13,6 +13,8 @@ namespace ivutils
   class Device : private Messenger
   {
     public:
+      static const std::string M_DEVICE_ID;
+
       Device() = default;
       /// Build a messenger at a list of parameters
       explicit Device( const ParametersList& params );
