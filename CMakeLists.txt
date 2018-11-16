@@ -9,6 +9,18 @@ include_directories(${PROJECT_SOURCE_DIR})
 find_package(PythonLibs 2.7 REQUIRED)
 message(STATUS "Python v${PYTHONLIBS_VERSION_STRING} found")
 include_directories(${PYTHON_INCLUDE_DIRS})
+set(GPIB_LIBRARY "")
+find_library(LINUX_GPIB gpib)
+find_library(NI4882 ni4882)
+if(LINUX_GPIB)
+  message(STATUS "LinuxGPIB library found")
+  add_definitions(-DGPIB)
+  set(GPIB_LIBRARY ${LINUX_GPIB})
+else()
+  message(STATUS "NI488.2 library found")
+  add_definitions(-DNI4882)
+  set(GPIB_LIBRARY ${NI4882})
+endif()
 
 #----- define the library
 
@@ -34,8 +46,7 @@ foreach(_test ${tests})
   string(REPLACE ".cc" "" test_bin ${_test})
   add_executable(${test_bin} ${PROJECT_SOURCE_DIR}/test/${_test})
   set_target_properties(${test_bin} PROPERTIES EXCLUDE_FROM_ALL true)
-  #target_link_libraries(${test_bin} ivutils ni4882)
-  target_link_libraries(${test_bin} ivutils)
+  target_link_libraries(${test_bin} ivutils ${GPIB_LIBRARY})
 endforeach()
 
 #----- documentation

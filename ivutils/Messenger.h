@@ -3,6 +3,7 @@
 
 #include "ivutils/Message.h"
 
+#include <array>
 #include <vector>
 #include <string>
 #include <regex>
@@ -37,6 +38,9 @@ namespace ivutils
       std::vector<std::string> configCommands_;
       std::vector<std::string> operationCommands_;
       std::vector<std::string> closingCommands_;
+      // device handlers
+      int device_; ///< Device descriptor
+      std::array<char,100> buffer_;
   };
 }
 
