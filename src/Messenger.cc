@@ -1,4 +1,5 @@
 #include "ivutils/Messenger.h"
+#include "ivutils/ParametersList.h"
 
 #include <exception>
 
@@ -8,23 +9,19 @@ const std::regex Messenger::RGX_STR_ANSW( "^(\\w+)A$" );
 const std::regex Messenger::RGX_INT_ANSW( "^([0-9]+)A$" );
 const std::regex Messenger::RGX_FLT_ANSW( "^([0-9\\.]+)A$" );
 
-Messenger::Messenger( unsigned short addr )
-{
-}
+Messenger::Messenger( const ParametersList& params ) :
+  configCommands_   ( params.getParameter<std::vector<std::string> >( "configCommands" ) ),
+  operationCommands_( params.getParameter<std::vector<std::string> >( "operationCommands" ) ),
+  closingCommands_  ( params.getParameter<std::vector<std::string> >( "closingCommands" ) )
+{}
 
 void
 Messenger::send( const message_t& msg ) const
 {
   if ( false )
     throw std::runtime_error( "Failed to send the following message:\n  "+std::string( msg ) );
+  //...
   last_command_ = msg;
-}
-
-void
-Messenger::send( const std::vector<message_t>& msg_batch ) const
-{
-  for ( const auto& msg : msg_batch )
-    send( msg );
 }
 
 template<> std::string
