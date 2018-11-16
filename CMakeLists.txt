@@ -29,7 +29,14 @@ install(DIRECTORY ivutils DESTINATION include)
 
 #----- set the tests/utils directory
 
-#add_subdirectory(test)
+file(GLOB tests RELATIVE ${PROJECT_SOURCE_DIR}/test ${PROJECT_SOURCE_DIR}/test/*.cc)
+foreach(_test ${tests})
+  string(REPLACE ".cc" "" test_bin ${_test})
+  add_executable(${test_bin} ${PROJECT_SOURCE_DIR}/test/${_test})
+  set_target_properties(${test_bin} PROPERTIES EXCLUDE_FROM_ALL true)
+  #target_link_libraries(${test_bin} ivutils ni4882)
+  target_link_libraries(${test_bin} ivutils)
+endforeach()
 
 #----- documentation
 
