@@ -31,6 +31,9 @@ Messenger::Messenger( int prim_addr, int second_addr )
     throw std::runtime_error( os.str() );
   }
 #if defined NI4882 || defined GPIB
+  char* version_chr;
+  ibvers( &version_chr );
+  std::cout << "GPIB version " << version_chr << " initialised." << std::endl;
   const int board_index = 0, send_eoi = 1, eos_mode = 0;
   const int timeout = T3s; // TNONE?
   device_ = ibdev( board_index, prim_addr, second_addr, timeout, send_eoi, eos_mode );
@@ -46,6 +49,12 @@ Messenger::Messenger( int prim_addr, int second_addr )
     << "  board index: " << board_index << "\n"
     << "  address: " << prim_addr << "/" << second_addr << "." << std::endl;
 #endif
+}
+
+Messenger::~Messenger()
+{
+  if ( ibonl( device_, 1 ) & ERR )
+    std::cerr << "Failed to reset the board to its default state!" << std::endl;
 }
 
 void

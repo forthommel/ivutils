@@ -16,6 +16,7 @@ namespace ivutils
 //      Messenger() = default;
       /// Build a messenger at a given address
       explicit Messenger( int prim_addr, int second_addr = 0 );
+      ~Messenger();
 
       /// Send a message to the module
       /// \param[in] msg Command to be transmitted
