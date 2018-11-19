@@ -3,6 +3,7 @@
 
 #include "ivutils/PythonParser.h"
 #include "ivutils/Device.h"
+#include <fstream>
 
 namespace ivutils
 {
@@ -13,10 +14,10 @@ namespace ivutils
 
       void rampDown();
       void scan();
+      void configure();
+      void test() const;
 
     private:
-      void configure();
-
       PythonParser parser_;
       /// SourceMeter communication module
       Device srcmeter_;
@@ -30,6 +31,7 @@ namespace ivutils
       unsigned int stable_time_; ///< time for stabilizing after changing voltage (in seconds)
       unsigned int time_at_test_; ///< timein stability test at voltage V_test (in seconds)
 
+      mutable std::ofstream out_file_;
   };
 }
 

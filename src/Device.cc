@@ -58,7 +58,7 @@ Device::readValue() const
 
   if ( !std::regex_match( values.at( 1 ), res, RGX_NUM_ANSW ) || res.empty() )
     throw std::runtime_error( "Failed to parse the value from device: "+values.at( 1 ) );
-  const unsigned long timestamp = std::stoi( res[1] );
+  const unsigned long timestamp = std::stod( res[1] );
 
   return std::make_pair( timestamp, value );
 }

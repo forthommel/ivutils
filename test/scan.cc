@@ -7,6 +7,8 @@ int main( int argc, char* argv[] )
     throw std::runtime_error( "Usage: "+std::string( argv[0] )+" config_file" );
 
   ivutils::IVScanner scanner( argv[1] );
+  //scanner.configure();
+  scanner.test();
 
   return 0;
 }

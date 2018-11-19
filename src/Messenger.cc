@@ -15,7 +15,7 @@
 
 using namespace ivutils;
 
-const unsigned short Messenger::ACK_TIME_MS = 10;
+const unsigned short Messenger::ACK_TIME_MS = 20;
 
 Messenger::Messenger( int prim_addr, int second_addr ) :
   device_( -1 )
