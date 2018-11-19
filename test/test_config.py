@@ -18,26 +18,31 @@ config = dict(
     vsource = dict(
         address = 24,
         configCommands = (
-            ':ROUT:TERM REAR',
-            ':SOUR:FUNC VOLT',
-            ':SOUR:VOLT:MODE FIX',
-            ':SOUR:VOLT:RANG 1000',
-            ':SENS:FUNC "CURR"',
-            ':SENS:CURR:PROT '+str(2.e-6),
-            ':SENS:CURR:RANG:AUTO ON',
-            ':SOUR:VOLT:LEV 0',
+            ':ROUT:TERM REAR',              # switch output terminals to rear panel
+            ':SOUR:FUNC VOLT',              # select voltage source function
+            ':SOUR:VOLT:MODE FIX',          # select fixed voltage source mode
+            ':SOUR:VOLT:RANG 1000',         # select 20V source range
+            ':SENS:FUNC "CURR"',            # select current measurement function
+            ':SENS:CURR:PROT '+str(2.e-6),  # set compliance limit to 2 uA
+            ':SENS:CURR:RANG:AUTO ON',      # enable current measurement autoranging
+            ':SOUR:VOLT:LEV 0',             # set the source voltage level to 0
         ),
         operationCommands = (
-            ':OUTP ON',
+            ':OUTP ON', # turn the output on
         ),
-        closingCommands = ('',),
+        closingCommands = (
+            ':OUTP OFF',
+        ),
     ),
-    Vramp = range(0, 1050, 50), # Voltages to ramp (start, highest (+1 step), step)
+    #Vramp = range(0, 1050, 50), # Voltages to ramp (start, highest (+1 step), step)
+    #Vtest = 1000., # Voltage to test stability (abs value)
+    #stableTime = 50, # time for stabilizing after changing voltage (in seconds)
+    timeAtTest = 10*60, # timein stability test at voltage Vtest (in seconds)
+    numRepetitions = 10, # current values per voltage
     bothPolarities = False,
     rampDown = False,
-    Vtest = 1000, # Voltage to test stability (abs value)
-    numRepetitions = 10, # current values per voltage
-    stableTime = 50, # time for stabilizing after changing voltage (in seconds)
-    timeAtTest = 10*60, # timein stability test at voltage Vtest (in seconds)
+    # my testing
+    Vramp = [n*0.1 for n in range(0, 10, 1)], # Voltages to ramp (start, highest (+1 step), step)
+    Vtest = 1., # Voltage to test stability (abs value)
+    stableTime = 1, # time for stabilizing after changing voltage (in seconds)
 )
-

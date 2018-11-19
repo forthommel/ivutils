@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(ivutils CXX)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(PROJECT_VERSION 1)
 set(IVUTILS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR})
@@ -9,6 +9,8 @@ include_directories(${PROJECT_SOURCE_DIR})
 find_package(PythonLibs 2.7 REQUIRED)
 message(STATUS "Python v${PYTHONLIBS_VERSION_STRING} found")
 include_directories(${PYTHON_INCLUDE_DIRS})
+find_package(ROOT REQUIRED)
+include_directories(${ROOT_INCLUDE_DIRS})
 set(GPIB_LIBRARY "")
 find_library(LINUX_GPIB gpib)
 find_library(NI4882 ni4882 HINTS /usr/lib/x86_64-linux-gnu)
@@ -26,7 +28,7 @@ endif()
 
 file(GLOB IVUTILS_SOURCES ${IVUTILS_SOURCE_DIR}/*.cc)
 add_library(ivutils SHARED ${IVUTILS_SOURCES})
-target_link_libraries(ivutils ${PYTHON_LIBRARIES})
+target_link_libraries(ivutils ${PYTHON_LIBRARIES} ${ROOT_LIBRARIES})
 
 #----- copy the input cards and other files
 

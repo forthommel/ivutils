@@ -22,7 +22,7 @@ namespace ivutils
       void reset() const;
       void initialise() const;
 
-      std::pair<unsigned long,double> readValue() const;
+      std::pair<unsigned long,double> readValue( const std::string command = M_READ ) const;
 
     private:
       static const std::regex RGX_STR_ANSW, RGX_NUM_ANSW;

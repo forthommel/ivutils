@@ -37,9 +37,9 @@ Device::initialise() const
 }
 
 std::pair<unsigned long, double>
-Device::readValue() const
+Device::readValue( const std::string command ) const
 {
-  const auto& rd = fetch( M_READ );
+  const auto& rd = fetch( command );
   if ( rd.size() != 1 )
     throw std::runtime_error( "Invalid values read from device!" );
 

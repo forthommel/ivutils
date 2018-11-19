@@ -3,19 +3,22 @@
 
 #include "ivutils/PythonParser.h"
 #include "ivutils/Device.h"
+
+#include "TApplication.h"
 #include <fstream>
 
 namespace ivutils
 {
-  class IVScanner
+  class IVScanner : public TApplication
   {
     public:
       IVScanner( const char* config_file );
-
-      void rampDown();
-      void scan();
-      void configure();
+      void configure() const;
       void test() const;
+
+      void rampDown() const;
+      void scan() const;
+      void stabilityTest() const;
 
     private:
       PythonParser parser_;
@@ -25,13 +28,12 @@ namespace ivutils
       Device ammeter_;
 
       bool ramp_down_;
-      std::vector<int> ramping_stages_;
+      std::vector<double> ramping_stages_;
       double v_test_; ///< Voltage to test stability (abs value)
       size_t num_repetitions_; ///< current values per voltage
       unsigned int stable_time_; ///< time for stabilizing after changing voltage (in seconds)
       unsigned int time_at_test_; ///< timein stability test at voltage V_test (in seconds)
-
-      mutable std::ofstream out_file_;
+      double voltage_at_test_;
   };
 }
 
