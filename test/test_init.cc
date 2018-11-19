@@ -11,8 +11,12 @@ int main( int argc, char* argv[] )
   const int dev_addr = atoi( argv[1] );
   const int sec_addr = ( argc > 2 ) ? atoi( argv[2] ) : 0;
 
+  std::cout << dev_addr << "|" << sec_addr << std::endl;
+
   ivutils::Messenger mess( dev_addr, sec_addr );
   for ( const auto& answ : mess.fetch( ivutils::Device::M_DEVICE_ID ) )
+    std::cout << ">>> " << answ << std::endl;
+  for ( const auto& answ : mess.fetch( ":READ?" ) )
     std::cout << ">>> " << answ << std::endl;
 
   return 0;

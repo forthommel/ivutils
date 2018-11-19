@@ -6,6 +6,7 @@
 #include <map>
 #include <unordered_map>
 
+/// Unique namespace for all utilitaries
 namespace ivutils
 {
   /// Parameters container
@@ -46,13 +47,13 @@ namespace ivutils
   /// Get an integer parameter value
   template<> int ParametersList::getParameter<int>( std::string key ) const;
   /// Set an integer parameter value
-  template<> ParametersList& ParametersList::set<int>( std::string key, const int& value );
+  template<> inline ParametersList& ParametersList::set<int>( std::string key, const int& value ) { int_values_[key] = value; return *this; }
   /// Check if a vector of integers parameter is handled
   template<> inline bool ParametersList::hasParameter<std::vector<int> >( std::string key ) const { return vec_int_values_.count( key ) != 0; }
   /// Get a vector of integers parameter value
   template<> std::vector<int> ParametersList::getParameter<std::vector<int> >( std::string key ) const;
   /// Set a vector of integers parameter value
-  template<> ParametersList& ParametersList::set<std::vector<int> >( std::string key, const std::vector<int>& value );
+  template<> inline ParametersList& ParametersList::set<std::vector<int> >( std::string key, const std::vector<int>& value ) { vec_int_values_[key] = value; return *this; }
 
   /// Check if a boolean parameter is handled
   template<> inline bool ParametersList::hasParameter<bool>( std::string key ) const { return hasParameter<int>( key ); }
@@ -66,39 +67,39 @@ namespace ivutils
   /// Get a double floating point parameter value
   template<> double ParametersList::getParameter<double>( std::string key ) const;
   /// Set a double floating point parameter value
-  template<> ParametersList& ParametersList::set<double>( std::string key, const double& value );
+  template<> inline ParametersList& ParametersList::set<double>( std::string key, const double& value ) { dbl_values_[key] = value; return *this; }
   /// Check if a vector of double floating point parameter is handled
   template<> inline bool ParametersList::hasParameter<std::vector<double> >( std::string key ) const { return vec_dbl_values_.count( key ) != 0; }
   /// Get a vector of double floating point parameter value
   template<> std::vector<double> ParametersList::getParameter<std::vector<double> >( std::string key ) const;
   /// Set a vector of double floating point parameter value
-  template<> ParametersList& ParametersList::set<std::vector<double> >( std::string key, const std::vector<double>& value );
+  template<> inline ParametersList& ParametersList::set<std::vector<double> >( std::string key, const std::vector<double>& value ) { vec_dbl_values_[key] = value; return *this; }
 
   /// Check if a string parameter is handled
   template<> inline bool ParametersList::hasParameter<std::string>( std::string key ) const { return str_values_.count( key ) != 0; }
   /// Get a string parameter value
   template<> std::string ParametersList::getParameter<std::string>( std::string key ) const;
   /// Set a string parameter value
-  template<> ParametersList& ParametersList::set<std::string>( std::string key, const std::string& value );
+  template<> inline ParametersList& ParametersList::set<std::string>( std::string key, const std::string& value ) { str_values_[key] = value; return *this; }
   /// Check if a vector of strings parameter is handled
   template<> inline bool ParametersList::hasParameter<std::vector<std::string> >( std::string key ) const { return vec_str_values_.count( key ) != 0; }
   /// Get a vector of strings parameter value
   template<> std::vector<std::string> ParametersList::getParameter<std::vector<std::string> >( std::string key ) const;
   /// Set a vector of strings parameter value
-  template<> ParametersList& ParametersList::set<std::vector<std::string> >( std::string key, const std::vector<std::string>& value );
+  template<> inline ParametersList& ParametersList::set<std::vector<std::string> >( std::string key, const std::vector<std::string>& value ) { vec_str_values_[key] = value; return *this; }
 
   /// Check if a parameters list parameter is handled
   template<> inline bool ParametersList::hasParameter<ParametersList>( std::string key ) const { return param_values_.count( key ) != 0; }
   /// Get a parameters list parameter value
   template<> ParametersList ParametersList::getParameter<ParametersList>( std::string key ) const;
   /// Set a parameters list parameter value
-  template<> ParametersList& ParametersList::set<ParametersList>( std::string key, const ParametersList& value );
+  template<> inline ParametersList& ParametersList::set<ParametersList>( std::string key, const ParametersList& value ) { param_values_[key] = value; return *this; }
   /// Check if a vector of parameters lists is handled
   template<> inline bool ParametersList::hasParameter<std::vector<ParametersList> >( std::string key ) const { return vec_param_values_.count( key ) != 0; }
   /// Get a vector of parameters list parameter value
   template<> std::vector<ParametersList> ParametersList::getParameter<std::vector<ParametersList> >( std::string key ) const;
   /// Set a vector of parameters list parameter value
-  template<> ParametersList& ParametersList::set<std::vector<ParametersList> >( std::string key, const std::vector<ParametersList>& value );
+  template<> inline ParametersList& ParametersList::set<std::vector<ParametersList> >( std::string key, const std::vector<ParametersList>& value ) { vec_param_values_[key] = value; return *this; }
 }
 
 #endif

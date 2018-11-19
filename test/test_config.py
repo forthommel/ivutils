@@ -2,7 +2,6 @@ config = dict(
     ammeter = dict(
         address = 22,
         configCommands = (
-            '*RST',
             'SYST:ZCOR OFF',
             #'RANG 2e-9',
             #'SYST:ZCH ON',
@@ -19,7 +18,6 @@ config = dict(
     vsource = dict(
         address = 24,
         configCommands = (
-            '*RST',
             ':ROUT:TERM REAR',
             ':SOUR:FUNC VOLT',
             ':SOUR:VOLT:MODE FIX',

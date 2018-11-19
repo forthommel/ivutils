@@ -12,6 +12,7 @@ namespace ivutils
   {
     public:
       PythonParser() = default;
+      /// Constructor from an external configuration file
       explicit PythonParser( const char* config_file );
       ~PythonParser();
 

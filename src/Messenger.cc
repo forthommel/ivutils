@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <iostream>
+#include <sstream>
 #include <thread>
 #include <chrono>
 
@@ -14,13 +15,14 @@
 
 using namespace ivutils;
 
-const std::regex Messenger::RGX_STR_ANSW( "^(\\w+)A$" );
-const std::regex Messenger::RGX_INT_ANSW( "^([0-9]+)A$" );
-const std::regex Messenger::RGX_FLT_ANSW( "^([0-9\\.]+)A$" );
+const unsigned short Messenger::ACK_TIME_MS = 10;
 
-Messenger::Messenger( int prim_addr, int second_addr )
+Messenger::Messenger( int prim_addr, int second_addr ) :
+  device_( -1 )
 {
-  if ( prim_addr > 30 || prim_addr < 0 ) {
+  if ( prim_addr < 0 )
+    return;
+  if ( prim_addr > 30 ) {
     std::ostringstream os;
     os << "Primary address must be comprised between 0 and 30. Current value: " << prim_addr << ".";
     throw std::runtime_error( os.str() );
@@ -39,7 +41,7 @@ Messenger::Messenger( int prim_addr, int second_addr )
   device_ = ibdev( board_index, prim_addr, second_addr, timeout, send_eoi, eos_mode );
   if ( device_ < 0 ) {
     std::ostringstream os;
-    os << "Failed to initialise the device interface on /dev/gpib" << second_addr << "!";
+    os << "Failed to initialise the device interface! ret=" << device_ << ".";
 # if defined GPIB
     os << "\n\t" << gpib_error_string( ThreadIberr() );
 # endif
@@ -47,21 +49,46 @@ Messenger::Messenger( int prim_addr, int second_addr )
   }
   std::cout << "Device is alive and kicking!\n"
     << "  board index: " << board_index << "\n"
-    << "  address: " << prim_addr << "/" << second_addr << "." << std::endl;
+    << "  addresses: primary: " << prim_addr << ", secondary: " << second_addr << ".\n";
+  clear();
 #endif
 }
 
 Messenger::~Messenger()
 {
-  if ( ibonl( device_, 1 ) & ERR )
+  if ( device_ >= 0 && ibonl( device_, 1 ) & ERR )
     std::cerr << "Failed to reset the board to its default state!" << std::endl;
 }
 
 void
-Messenger::send( const std::string& msg ) const
+Messenger::clear() const
 {
-  if ( ibwrt( device_, msg.c_str(), msg.size() ) & ERR )
-    throw std::runtime_error( "Failed to send the following message:\n  "+msg );
+  const int res = ibclr( device_ );
+  if ( res & ERR ) {
+    std::ostringstream os;
+    os
+      << "Failed to clear the messenger:\n"
+      << "Return value: " << res << ", "
+      << "GPIB error: " << gpib_error_string( ThreadIberr() );
+    throw std::runtime_error( os.str() );
+  }
+  std::cout << "Device clear sent " << res << std::endl;
+}
+
+void
+Messenger::send( std::string msg ) const
+{
+  const std::string out_msg = msg+"\n";
+  const int res = ibwrt( device_, out_msg.c_str(), out_msg.size() );
+  if ( res & ERR ) {
+    std::ostringstream os;
+    os
+      << "Failed to send the following message:\n  "
+      << msg << "\n"
+      << "Return value: " << res << ", "
+      << "GPIB error: " << gpib_error_string( ThreadIberr() );
+    throw std::runtime_error( os.str() );
+  }
   last_command_ = msg;
 }
 
@@ -69,28 +96,24 @@ std::vector<std::string>
 Messenger::fetch( const std::string& msg ) const
 {
   send( msg );
-  std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) );
+  std::this_thread::sleep_for( std::chrono::milliseconds( ACK_TIME_MS ) );
   return receive();
 }
 
 std::vector<std::string>
 Messenger::receive() const
 {
+#if defined NI4882 || defined GPIB
   auto start = std::chrono::system_clock::now();
 
-#if defined NI4882 || defined GPIB
   if ( ibrd( device_, (void*)buffer_.data(), buffer_.size() ) & ERR )
     throw std::runtime_error( "Failed to read the board buffer!" );
-#else
-# error "No IO library found!"
-#endif
 
   std::chrono::duration<double> dur_s = std::chrono::system_clock::now()-start;
   std::cout << "Transferred " << ThreadIbcntl() << " bytes in " << dur_s.count() << " seconds: "
-    << ThreadIbcntl()/dur_s.count() << " data throughput." << std::endl;
+    << ThreadIbcntl()*1.e-3/dur_s.count() << " kb/s data throughput." << std::endl;
 
   std::vector<std::string> ret;
-#if defined NI4882 || defined GPIB
   std::string tmp;
   for ( long i = 0; i < ThreadIbcntl(); ++i ) {
     if ( buffer_.at( i ) != '\n' )
@@ -101,6 +124,8 @@ Messenger::receive() const
       tmp.clear();
     }
   }
-#endif
   return ret;
+#else
+  throw std::runtime_error( "No communication libraries are linked against this library! Cannot communicate..." );
+#endif
 }

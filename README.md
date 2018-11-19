@@ -23,3 +23,16 @@ Optionally:
 - `mkdir build && cd build` to define the location of the library and tests,
 - `cmake ..` to generate a personalised Makefile for your system,
 - `make` to build the `.so` library. You may link it against several tests (see the `test/` directory).
+
+## Usage
+
+### Loading the drivers [linux-gpib + NI GPIB-USB-HS adapter]
+
+```sh
+modprobe ni_usb_gpib
+```
+
+The driver should be selected through the `gpib.conf` configuration file (usually in `/usr/local/etc/gpib.conf`):
+- locate the `interface` block
+- edit the `board_type` to `ni_usb_b`
+

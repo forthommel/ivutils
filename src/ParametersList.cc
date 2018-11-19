@@ -146,13 +146,6 @@ ParametersList::getParameter<ParametersList>( std::string key ) const
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
 }
 
-template<> ParametersList&
-ParametersList::set<ParametersList>( std::string key, const ParametersList& value )
-{
-  param_values_[key] = value;
-  return *this;
-}
-
 template<> std::vector<ParametersList>
 ParametersList::getParameter<std::vector<ParametersList> >( std::string key ) const
 {
@@ -160,13 +153,6 @@ ParametersList::getParameter<std::vector<ParametersList> >( std::string key ) co
     if ( kv.first.compare( key ) == 0 )
       return kv.second;
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
-}
-
-template<> ParametersList&
-ParametersList::set<std::vector<ParametersList> >( std::string key, const std::vector<ParametersList>& value )
-{
-  vec_param_values_[key] = value;
-  return *this;
 }
 
 //------------------------------------------------------------------
@@ -182,13 +168,6 @@ ParametersList::getParameter<int>( std::string key ) const
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
 }
 
-template<> ParametersList&
-ParametersList::set<int>( std::string key, const int& value )
-{
-  int_values_[key] = value;
-  return *this;
-}
-
 template<> std::vector<int>
 ParametersList::getParameter<std::vector<int> >( std::string key ) const
 {
@@ -196,13 +175,6 @@ ParametersList::getParameter<std::vector<int> >( std::string key ) const
     if ( kv.first.compare( key ) == 0 )
       return kv.second;
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
-}
-
-template<> ParametersList&
-ParametersList::set<std::vector<int> >( std::string key, const std::vector<int>& value )
-{
-  vec_int_values_[key] = value;
-  return *this;
 }
 
 //------------------------------------------------------------------
@@ -218,13 +190,6 @@ ParametersList::getParameter<double>( std::string key ) const
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
 }
 
-template<> ParametersList&
-ParametersList::set<double>( std::string key, const double& value )
-{
-  dbl_values_[key] = value;
-  return *this;
-}
-
 template<> std::vector<double>
 ParametersList::getParameter<std::vector<double> >( std::string key ) const
 {
@@ -232,13 +197,6 @@ ParametersList::getParameter<std::vector<double> >( std::string key ) const
     if ( kv.first.compare( key ) == 0 )
       return kv.second;
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
-}
-
-template<> ParametersList&
-ParametersList::set<std::vector<double> >( std::string key, const std::vector<double>& value )
-{
-  vec_dbl_values_[key] = value;
-  return *this;
 }
 
 //------------------------------------------------------------------
@@ -254,13 +212,6 @@ ParametersList::getParameter<std::string>( std::string key ) const
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
 }
 
-template<> ParametersList&
-ParametersList::set<std::string>( std::string key, const std::string& value )
-{
-  str_values_[key] = value;
-  return *this;
-}
-
 template<> std::vector<std::string>
 ParametersList::getParameter<std::vector<std::string> >( std::string key ) const
 {
@@ -268,11 +219,4 @@ ParametersList::getParameter<std::vector<std::string> >( std::string key ) const
     if ( kv.first.compare( key ) == 0 )
       return kv.second;
   throw std::runtime_error( "Failed to retrieve parameter with key="+key+"!" );
-}
-
-template<> ParametersList&
-ParametersList::set<std::vector<std::string> >( std::string key, const std::vector<std::string>& value )
-{
-  vec_str_values_[key] = value;
-  return *this;
 }

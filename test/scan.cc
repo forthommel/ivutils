@@ -3,10 +3,9 @@
 
 int main( int argc, char* argv[] )
 {
-  if ( argc < 2 ) {
-    std::cerr << "Usage: " << argv[0] << " config_file" << std::endl;
-    exit( 0 );
-  }
+  if ( argc < 2 )
+    throw std::runtime_error( "Usage: "+std::string( argv[0] )+" config_file" );
+
   ivutils::IVScanner scanner( argv[1] );
 
   return 0;

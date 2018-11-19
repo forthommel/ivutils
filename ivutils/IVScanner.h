@@ -24,6 +24,7 @@ namespace ivutils
       Device ammeter_;
 
       bool ramp_down_;
+      std::vector<int> ramping_stages_;
       double v_test_; ///< Voltage to test stability (abs value)
       size_t num_repetitions_; ///< current values per voltage
       unsigned int stable_time_; ///< time for stabilizing after changing voltage (in seconds)
