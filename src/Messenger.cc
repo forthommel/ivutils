@@ -47,10 +47,10 @@ Messenger::Messenger( int prim_addr, int second_addr ) :
 # endif
     throw std::runtime_error( os.str() );
   }
+  clear();
   std::cout << "Device is alive and kicking!\n"
     << "  board index: " << board_index << "\n"
     << "  addresses: primary: " << prim_addr << ", secondary: " << second_addr << ".\n";
-  clear();
 #endif
 }
 

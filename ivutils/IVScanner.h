@@ -18,9 +18,10 @@ namespace ivutils
 
       void rampDown() const;
       void scan() const;
-      void stabilityTest() const;
 
     private:
+      void stabilityTest( std::vector<double>& i_ramp, std::vector<double>& i_stable ) const;
+
       PythonParser parser_;
       /// SourceMeter communication module
       Device srcmeter_;

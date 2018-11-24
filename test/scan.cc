@@ -8,8 +8,8 @@ int main( int argc, char* argv[] )
 
   ivutils::IVScanner scanner( argv[1] );
   scanner.configure();
-  scanner.test();
-  //scanner.stabilityTest();
+  scanner.scan();
+  //scanner.test();
 
   return 0;
 }
