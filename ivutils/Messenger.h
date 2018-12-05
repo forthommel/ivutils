@@ -5,6 +5,10 @@
 #include <vector>
 #include <string>
 
+#if defined EMULATE
+# include <fstream>
+#endif
+
 namespace ivutils
 {
   class ParametersList;
@@ -30,7 +34,11 @@ namespace ivutils
       /// Retrieve data from the module
       std::vector<std::string> receive() const;
 
+#if defined EMULATE
+      mutable std::ofstream cmd_file_;
+#endif
       mutable std::string last_command_;
+
       std::vector<std::string> configCommands_;
       std::vector<std::string> operationCommands_;
       std::vector<std::string> closingCommands_;

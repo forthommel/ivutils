@@ -2,7 +2,6 @@
 #include "ivutils/ParametersList.h"
 
 #include <exception>
-#include <iostream>
 #include <sstream>
 #include <thread>
 #include <chrono>
@@ -19,6 +18,9 @@ const unsigned short Messenger::ACK_TIME_MS = 20;
 
 Messenger::Messenger( int prim_addr, int second_addr ) :
   device_( -1 )
+#ifdef EMULATE
+  , cmd_file_( "commands.out", std::ios::out )
+#endif
 {
   if ( prim_addr < 0 )
     return;
@@ -35,7 +37,7 @@ Messenger::Messenger( int prim_addr, int second_addr ) :
 #if defined NI4882 || defined GPIB
   char* version_chr;
   ibvers( &version_chr );
-  std::cout << "GPIB version " << version_chr << " initialised." << std::endl;
+  LogMessage( info ) << "GPIB version " << version_chr << " initialised.";
   const int board_index = 0, send_eoi = 1, eos_mode = 0;
   const int timeout = T3s; // TNONE?
   device_ = ibdev( board_index, prim_addr, second_addr, timeout, send_eoi, eos_mode );
@@ -48,21 +50,24 @@ Messenger::Messenger( int prim_addr, int second_addr ) :
     throw std::runtime_error( os.str() );
   }
   clear();
-  std::cout << "Device is alive and kicking!\n"
+  LogMessage( info ) << "Device is alive and kicking!\n"
     << "  board index: " << board_index << "\n"
-    << "  addresses: primary: " << prim_addr << ", secondary: " << second_addr << ".\n";
+    << "  addresses: primary: " << prim_addr << ", secondary: " << second_addr << ".";
 #endif
 }
 
 Messenger::~Messenger()
 {
+#if defined NI4882 || defined GPIB
   if ( device_ >= 0 && ibonl( device_, 1 ) & ERR )
-    std::cerr << "Failed to reset the board to its default state!" << std::endl;
+    LogMessage( error ) << "Failed to reset the board to its default state!";
+#endif
 }
 
 void
 Messenger::clear() const
 {
+#if defined NI4882 || defined GPIB
   const int res = ibclr( device_ );
   if ( res & ERR ) {
     std::ostringstream os;
@@ -72,12 +77,16 @@ Messenger::clear() const
       << "GPIB error: " << gpib_error_string( ThreadIberr() );
     throw std::runtime_error( os.str() );
   }
-  std::cout << "Device clear sent " << res << std::endl;
+  LogMessage( info ) << "Device clear sent " << res << ".";
+#endif
 }
 
 void
 Messenger::send( std::string msg ) const
 {
+#if defined EMULATE
+  cmd_file_ << msg << "\n";
+#elif defined NI4882 || defined GPIB
   const std::string out_msg = msg+"\n";
   const int res = ibwrt( device_, out_msg.c_str(), out_msg.size() );
   if ( res & ERR ) {
@@ -90,6 +99,7 @@ Messenger::send( std::string msg ) const
     throw std::runtime_error( os.str() );
   }
   last_command_ = msg;
+#endif
 }
 
 std::vector<std::string>
@@ -103,15 +113,17 @@ Messenger::fetch( const std::string& msg ) const
 std::vector<std::string>
 Messenger::receive() const
 {
-#if defined NI4882 || defined GPIB
+#ifdef EMULATE
+  return std::vector<std::string>{ "-1.A,1,dummy" };
+#elif defined NI4882 || defined GPIB
   auto start = std::chrono::system_clock::now();
 
   if ( ibrd( device_, (void*)buffer_.data(), buffer_.size() ) & ERR )
     throw std::runtime_error( "Failed to read the board buffer!" );
 
   std::chrono::duration<double> dur_s = std::chrono::system_clock::now()-start;
-  std::cout << "Transferred " << ThreadIbcntl() << " bytes in " << dur_s.count() << " seconds: "
-    << ThreadIbcntl()*1.e-3/dur_s.count() << " kb/s data throughput." << std::endl;
+  LogMessage( info ) << "Transferred " << ThreadIbcntl() << " bytes in " << dur_s.count() << " seconds: "
+    << ThreadIbcntl()*1.e-3/dur_s.count() << " kb/s data throughput.";
 
   std::vector<std::string> ret;
   std::string tmp;

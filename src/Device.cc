@@ -1,6 +1,8 @@
 #include "ivutils/Device.h"
 #include "ivutils/ParametersList.h"
 #include "ivutils/Utils.h"
+#include "ivutils/Logger.h"
+
 #include <iostream>
 
 using namespace ivutils;

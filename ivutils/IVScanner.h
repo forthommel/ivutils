@@ -5,6 +5,7 @@
 #include "ivutils/Device.h"
 
 #include "TApplication.h"
+#include "TGraphErrors.h"
 #include <fstream>
 
 namespace ivutils
@@ -35,6 +36,8 @@ namespace ivutils
       unsigned int stable_time_; ///< time for stabilizing after changing voltage (in seconds)
       unsigned int time_at_test_; ///< timein stability test at voltage V_test (in seconds)
       double voltage_at_test_;
+
+      mutable TGraphErrors gr_stability_vs_time_;
   };
 }
 

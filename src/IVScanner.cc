@@ -1,5 +1,6 @@
 #include "ivutils/IVScanner.h"
 #include "ivutils/Utils.h"
+#include "ivutils/Logger.h"
 
 #include "TSystem.h"
 #include "TFile.h"
@@ -9,7 +10,6 @@
 #include "TGraphErrors.h"
 #include "TH1.h"
 
-#include <iostream>
 #include <functional>
 #include <thread>
 #include <set>
@@ -28,6 +28,7 @@ IVScanner::IVScanner( const char* config_file ) :
   time_at_test_   ( parser_.getParameter<int>( "timeAtTest" ) ),
   voltage_at_test_( parser_.getParameter<double>( "Vtest" ) )
 {
+#ifndef EMULATE
   //--- first check if the modules are correct
   { //--- check the ammeter
     const auto& mod = ammeter_.fetch( Device::M_DEVICE_ID );
@@ -43,6 +44,7 @@ IVScanner::IVScanner( const char* config_file ) :
       && mod.at( 0 ).find( "MODEL 2410" ) == std::string::npos ) )
       throw std::runtime_error( "Expecting KEITHLEY MODEL 2410, found\n  "+mod.at( 0 )+"\ninstead." );
   }
+#endif
   //const auto& val = ammeter_.readValue();
 }
 
@@ -50,15 +52,15 @@ void
 IVScanner::rampDown() const
 {
   const auto& v_ini = ammeter_.readValue( ":SOUR:VOLT:LEV?" );
-  std::cout << v_ini.second << std::endl;
   //--- first build a decreasing list of (unique) voltage values for the ramp down
   std::set<double,std::greater<double> > vtests( ramping_stages_.begin(), ramping_stages_.end() );
   vtests.insert( 0. ); // ensure we finish there...
   {
-    std::cout << "RAMPDOWN: will use the following values:";
+    std::ostringstream os;
     for ( const auto& v : vtests )
-      std::cout << " " << v;
-    std::cout << " V." << std::endl;
+      os << " " << v;
+    LogMessage( info ) << "RAMPDOWN: will use the following values:"
+      << os.str() << " V.";
   }
   for ( const auto& v : vtests ) {
     //--- build and send the message to set voltage
@@ -67,9 +69,9 @@ IVScanner::rampDown() const
     ammeter_.send( os.str() );
     //srcmeter_.send( os.str() );
     std::this_thread::sleep_for( std::chrono::seconds( stable_time_ ) );
-    std::cout << "RAMPDOWN: currently at " << v << " V." << std::endl;
+    LogMessage( info ) << "RAMPDOWN: currently at " << v << " V.";
   }
-  std::cout << "RAMPDOWN: finished!" << std::endl;
+  LogMessage( info ) << "RAMPDOWN: finished!";
 }
 
 void
@@ -79,13 +81,19 @@ IVScanner::scan() const
   TGraphErrors gr_meas;
   gr_meas.SetName( "iv_scan" );
   gr_meas.SetTitle( ";Bias (V);Leakage current (A)" );
-  gr_meas.Draw( "alp" );
   gr_meas.SetMarkerStyle( 24 );
   gr_meas.SetLineWidth( 2 );
 
+  TCanvas c;
+  c.Divide( 1, 2 );
+  c.cd( 1 );
+  gr_meas.Draw( "alp" );
+  c.cd( 2 );
+  gr_stability_vs_time_.Draw( "alp" );
+
   int i = 0;
   for ( const auto& vr : ramping_stages_ ) {
-    std::cout << "RAMPING: currently at " << vr << " V." << std::endl;
+    LogMessage( info ) << "RAMPING: currently at " << vr << " V.";
     { //--- build and send the message to set voltage
       std::ostringstream os;
       os << ":SOUR:VOLT:LEV " << vr;
@@ -106,11 +114,10 @@ IVScanner::scan() const
     }
     //--- calculate the mean and standard deviation
     const double mean_i = mean( i_ramp ), stdev_i = stdev( i_ramp, mean_i );
-    std::cout
+    LogMessage( info )
       << "Measurement " << i+1 << "/" << ramping_stages_.size() << ": "
       << vr << " V, "
-      << "Current = " << mean_i << " +- " << stdev_i << " A."
-      << std::endl;
+      << "Current = " << mean_i << " +- " << stdev_i << " A.";
     gr_meas.SetPoint( i, vr, mean_i );
     gr_meas.SetPointError( i, 0., stdev_i );
     gSystem->ProcessEvents();
@@ -123,26 +130,34 @@ IVScanner::scan() const
     rampDown();
 
   gr_meas.Write();
+  gr_stability_vs_time_.Write();
   root_file->Close();
 }
 
 void
 IVScanner::stabilityTest( std::vector<double>& i_ramp, std::vector<double>& i_stable ) const
 {
-  std::cout << "Stability test ongoing, please wait:" << std::endl;
+  LogMessage( info ) << "Stability test ongoing, please wait:";
   int n = 0;
   auto start = std::chrono::system_clock::now();
 
-  while ( std::chrono::duration_cast<std::chrono::seconds>( std::chrono::system_clock::now()-start ).count() < time_at_test_ ) {
+  double elapsed_sec = 0.;
+  while ( elapsed_sec < time_at_test_ ) {
     //--- necessary wait between two measurements of current value
     std::this_thread::sleep_for( std::chrono::seconds( stable_time_ ) );
     const auto& val_at_time = ammeter_.readValue( Device::M_READ, "A" );
     if ( n++ < num_repetitions_ )
       i_ramp.emplace_back( val_at_time.second );
-    else
+    else {
       i_stable.emplace_back( val_at_time.second );
+      gr_stability_vs_time_.SetPoint( gr_stability_vs_time_.GetN(), elapsed_sec, val_at_time.second );
+      gSystem->ProcessEvents();
+      gPad->Modified();
+      gPad->Update();
+    }
+    elapsed_sec = std::chrono::duration_cast<std::chrono::seconds>( std::chrono::system_clock::now()-start ).count();
   }
-  std::cout << "Stability test finished!" << std::endl;
+  LogMessage( info ) << "Stability test finished!";
 }
 
 void
@@ -186,5 +201,5 @@ void
 IVScanner::configure() const
 {
   ammeter_.initialise();
-  //srcmeter_.initialise();
+  srcmeter_.initialise();
 }

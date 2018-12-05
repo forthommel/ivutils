@@ -1,23 +1,22 @@
 #include "ivutils/Messenger.h"
 #include "ivutils/Device.h"
-#include <iostream>
+#include "ivutils/Logger.h"
 
 int main( int argc, char* argv[] )
 {
-  if ( argc < 2 ) {
-    std::cerr << "Usage: " << argv[0] << " device_address [secondary_address]" << std::endl;
-    exit( 0 );
-  }
+  if ( argc < 2 )
+    LogMessage( error ) << "Usage: " << argv[0] << " device_address [secondary_address]";
+
   const int dev_addr = atoi( argv[1] );
   const int sec_addr = ( argc > 2 ) ? atoi( argv[2] ) : 0;
 
-  std::cout << dev_addr << "|" << sec_addr << std::endl;
+  LogMessage( info ) << "Will fetch device address: " << dev_addr << "|" << sec_addr << ".";
 
   ivutils::Messenger mess( dev_addr, sec_addr );
   for ( const auto& answ : mess.fetch( ivutils::Device::M_DEVICE_ID ) )
-    std::cout << ">>> " << answ << std::endl;
-  for ( const auto& answ : mess.fetch( ":READ?" ) )
-    std::cout << ">>> " << answ << std::endl;
+    LogMessage( info ) << "Device ID: " << answ;
+  for ( const auto& answ : mess.fetch( ivutils::Device::M_READ/*":READ?"*/ ) )
+    LogMessage( info ) << "Read value: " << answ;
 
   return 0;
 }
