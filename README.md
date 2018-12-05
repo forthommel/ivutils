@@ -51,3 +51,26 @@ The driver should be selected through the `gpib.conf` configuration file (usuall
 ```sh
 gpib_configure
 ```
+
+### SLC6 instructions
+
+Prior to any `cmake` procedure, ensure that you have a reasonably recent `gcc` version (i.e. ≥ `4.8.X`).
+On SLC6, you may pick it up through the following procedure:
+
+- first time setup (as root user):
+  ```sh
+  wget -O /etc/yum.repos.d/slc6-devtoolset.repo http://linuxsoft.cern.ch/cern/devtoolset/slc6-devtoolset.repo
+  yum install devtoolset-2
+  ```
+
+- environment enabling (at each login, for the user/terminal in charge):
+  ```sh
+  scl enable devtoolset-2 bash
+  ```
+
+**Note**: if you ran any `cmake|make` command listed above before this procedure, you need to clean the `cmake` cache.
+Usually, this can be done through (in your `build/` directory!):
+
+```sh
+rm -rf CMake*
+```
