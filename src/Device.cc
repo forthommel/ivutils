@@ -11,9 +11,6 @@ const std::string Device::M_DEVICE_ID = "*IDN?";
 const std::string Device::M_RESET = "*RST";
 const std::string Device::M_READ = ":READ?";
 
-const std::regex Device::RGX_STR_ANSW( "^(\\w+)A$" );
-const std::regex Device::RGX_NUM_ANSW( "^([\\+\\-]?[0-9E\\.\\+\\-]+)(.)?$" );
-
 Device::Device( const ParametersList& params ) :
   Messenger( params.getParameter<int>( "address" ),
              params.hasParameter<int>( "secondaryAddress" ) ? params.getParameter<int>( "secondaryAddress" ) : 0 ),
@@ -55,23 +52,18 @@ Device::readValue( const std::string command, std::string unit ) const
 
   const auto values = split( rd.at( 0 ), ',' );
 
-  std::smatch res;
-  if ( !std::regex_match( values.at( 0 ), res, RGX_NUM_ANSW ) || res.empty() ) {
-    throw std::runtime_error( "Failed to parse the value from device: "+values.at( 0 ) );}
-  if ( !unit.empty() && res.size() > 1 && res[2] != unit )
-    throw std::runtime_error( "Failed to extract value with unit ["+unit+"]" );
-  const double value = std::stod( res[1] );
-
+  double value = 0.;
   unsigned long timestamp = 0;
-  if ( values.size() > 1 ) {
-    //--- at this point, the readback value might be:
-    // * value
-    // * timestamp
-    // * 256
-    if ( !std::regex_match( values.at( 1 ), res, RGX_NUM_ANSW ) || res.empty() )
-      throw std::runtime_error( "Failed to parse the timestamp from device: "+values.at( 1 ) );
-    timestamp = std::stod( res[1] );
+  try {
+    value = std::stod( values.at( 0 ) );
+  } catch ( const std::invalid_argument& ) {
+    throw std::runtime_error( "Failed to parse the answer from device: "+values.at( 0 ) );
   }
-
+  if ( values.size() > 1 )
+    try {
+      timestamp = std::stol( values.at( 1 ) );
+    } catch ( const std::invalid_argument& ) {
+      throw std::runtime_error( "Failed to parse the timestamp from device: "+values.at( 1 ) );
+    }
   return std::make_pair( timestamp, value );
 }

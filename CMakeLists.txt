@@ -1,12 +1,16 @@
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 project(ivutils CXX)
-set(CMAKE_CXX_STANDARD 14)
+if(NOT CMAKE_VERSION VERSION_LESS 3.1)
+  set(CMAKE_CXX_STANDARD 14)
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
 set(PROJECT_VERSION 1)
 set(IVUTILS_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR})
 
 #----- find dependencies
-find_package(PythonLibs 2.7 REQUIRED)
+find_package(PythonLibs 2.6 REQUIRED)
 message(STATUS "Python v${PYTHONLIBS_VERSION_STRING} found")
 include_directories(${PYTHON_INCLUDE_DIRS})
 find_package(ROOT REQUIRED)

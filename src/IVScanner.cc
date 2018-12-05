@@ -66,8 +66,7 @@ IVScanner::rampDown() const
     //--- build and send the message to set voltage
     std::ostringstream os;
     os << ":SOUR:VOLT:LEV " << v;
-    ammeter_.send( os.str() );
-    //srcmeter_.send( os.str() );
+    srcmeter_.send( os.str() );
     std::this_thread::sleep_for( std::chrono::seconds( stable_time_ ) );
     LogMessage( info ) << "RAMPDOWN: currently at " << v << " V.";
   }
